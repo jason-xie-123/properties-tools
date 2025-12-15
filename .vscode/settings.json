@@ -3,9 +3,11 @@
         "choco",
         "coreutils",
         "GOARCH",
+        "gopkg",
         "grealpath",
         "ldflags",
         "msys",
+        "Pathto",
         "urfave",
         "WINDIR"
     ]
