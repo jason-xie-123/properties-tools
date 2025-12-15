@@ -5,12 +5,20 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"runtime"
 	"strings"
 
 	packageVersion "properties-cli/version"
 
 	"github.com/urfave/cli/v2"
 )
+
+func detectPlatformEOL() string {
+	if runtime.GOOS == "windows" {
+		return "\r\n"
+	}
+	return "\n"
+}
 
 // propRead：读取 key 的值（只取第一次出现的）
 func propRead(keyName, propPath string) string {
@@ -23,16 +31,20 @@ func propRead(keyName, propPath string) string {
 	prefix := keyName + "="
 
 	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
+		// Scanner 会去掉行尾的 \n，并且对 \r\n 的 \r 也会处理掉（不会出现在 Text() 里）
+		raw := scanner.Text()
+		line := strings.TrimSpace(raw)
+
 		if line == "" || strings.HasPrefix(line, "#") || strings.HasPrefix(line, ";") {
 			continue
 		}
 
-		lineNoLeft := strings.TrimLeft(line, " \t")
+		lineNoLeft := strings.TrimLeft(raw, " \t")
 		if strings.HasPrefix(lineNoLeft, prefix) {
 			return strings.TrimSpace(strings.TrimPrefix(lineNoLeft, prefix))
 		}
 	}
+
 	return ""
 }
 
@@ -41,7 +53,7 @@ func propWrite(keyName, keyValue, propPath string) {
 	data, _ := os.ReadFile(propPath)
 
 	scanner := bufio.NewScanner(bytes.NewReader(data))
-	var lines []string
+	lines := make([]string, 0, 64)
 
 	prefix := keyName + "="
 	newLine := keyName + "=" + keyValue
@@ -69,8 +81,10 @@ func propWrite(keyName, keyValue, propPath string) {
 		lines = append(lines, newLine)
 	}
 
-	// 按 Go / 系统常规方式写回（统一 \n）
-	_ = os.WriteFile(propPath, []byte(strings.Join(lines, "\n")+"\n"), 0o644)
+	eol := detectPlatformEOL()
+
+	// 按平台常规方式写回：Windows 用 \r\n，其它用 \n；并确保文件末尾有换行
+	_ = os.WriteFile(propPath, []byte(strings.Join(lines, eol)+eol), 0o644)
 }
 
 func fileExists(path string) bool {
