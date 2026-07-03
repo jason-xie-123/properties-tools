@@ -1,0 +1,72 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Verify release notes exist
+        run: |
+          if [ ! -s release_notes.md ]; then
+            echo "release_notes.md is missing or empty — draft it locally before tagging (see AGENTS.md)."
+            exit 1
+          fi
+
+      - name: Run tests
+        working-directory: properties-cli
+        run: go test ./...
+
+      - name: Cross-compile binaries
+        working-directory: properties-cli
+        env:
+          TARGET_NAME: properties-cli
+        run: |
+          set -e
+          RELEASE_DIR="$GITHUB_WORKSPACE/release"
+          mkdir -p "$RELEASE_DIR"
+          GOOS=windows GOARCH=amd64 go build -ldflags '-w -s' -trimpath -o "$RELEASE_DIR/windows-amd64/${TARGET_NAME}.exe" ./cmd/properties-cli
+          GOOS=windows GOARCH=386   go build -ldflags '-w -s' -trimpath -o "$RELEASE_DIR/windows-386/${TARGET_NAME}.exe"   ./cmd/properties-cli
+          GOOS=windows GOARCH=arm64 go build -ldflags '-w -s' -trimpath -o "$RELEASE_DIR/windows-arm64/${TARGET_NAME}.exe" ./cmd/properties-cli
+          GOOS=darwin  GOARCH=amd64 go build -ldflags '-w -s' -trimpath -o "$RELEASE_DIR/darwin-amd64/${TARGET_NAME}"      ./cmd/properties-cli
+          GOOS=darwin  GOARCH=arm64 go build -ldflags '-w -s' -trimpath -o "$RELEASE_DIR/darwin-arm64/${TARGET_NAME}"      ./cmd/properties-cli
+
+      - name: Package release archives
+        env:
+          TARGET_NAME: properties-cli
+        run: |
+          set -e
+          RELEASE_DIR="$GITHUB_WORKSPACE/release"
+
+          for arch in windows-386 windows-amd64 windows-arm64; do
+            (cd "$RELEASE_DIR/$arch" && zip -r "$RELEASE_DIR/${TARGET_NAME}-${arch}.zip" ./*)
+            rm -rf "${RELEASE_DIR:?}/$arch"
+          done
+
+          for arch in darwin-amd64 darwin-arm64; do
+            tar -zcvf "$RELEASE_DIR/${TARGET_NAME}-${arch}.tar.gz" -C "$RELEASE_DIR/$arch" "."
+            rm -rf "${RELEASE_DIR:?}/$arch"
+          done
+
+          ls -lh "$RELEASE_DIR"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --title "Release ${{ github.ref_name }}" \
+            --notes-file release_notes.md \
+            release/*

@@ -194,7 +194,8 @@ check_windows_os_info_exist() {
 get_os_architecture() {
     CURRENT_OS_ARCHITECTURE=""
     if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "$OSTYPE" == "win32" || -n "$WINDIR" ]]; then
-        # win 11 开始系统已经标记 wmic 命令为废弃方法，在某些 win11 设备上不存在 wmic 命令
+        # Since Windows 11, wmic has been marked deprecated by the system,
+        # and some Windows 11 machines don't have the wmic command at all.
         # OS_ARCHITECTURE_RESULT=$(wmic os get osarchitecture)
         check_windows_os_info_exist
         OS_ARCHITECTURE_RESULT=$(windows-os-info --action=os_arch)
