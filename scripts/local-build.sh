@@ -47,38 +47,25 @@ process() {
             exit 1
         fi
     fi
-
-    if [ "$IS_SUPPORT_UPLOAD_TO_GITHUB" = "true" ]; then
-        COMMAND="\"$PROJECT_FOLDER/scripts/upload/upload-to-github.sh\""
-        echo exec: "$COMMAND"
-        if ! eval "$COMMAND"; then
-            echo ""
-            echo ""
-            echo "[ERROR]: failed to upload to GitHub"
-            echo ""
-            echo ""
-
-            exit 1
-        fi
-    fi
 }
 
 usage() {
     echo "Usage:"
-    echo "  $(basename "$0") [--flag-compress-release] [--flag-upload-to-github] [-h]"
+    echo "  $(basename "$0") [--flag-compress-release] [-h]"
     echo ""
     echo "Description:"
     echo "  --flag-compress-release: whether to compress the release binaries, default is false"
-    echo "  --flag-upload-to-github: whether to upload the release to GitHub Releases, default is false"
     echo ""
     echo "Example:"
-    echo "  $(basename "$0") --flag-compress-release --flag-upload-to-github"
+    echo "  $(basename "$0") --flag-compress-release"
+    echo ""
+    echo "Note: publishing to GitHub Releases is handled by .github/workflows/release.yml"
+    echo "on tag push, not by this script."
 
     exit 1
 }
 
 IS_SUPPORT_COMPRESS_RELEASE="false"
-IS_SUPPORT_UPLOAD_TO_GITHUB="false"
 while true; do
     if [ -z "$1" ]; then
         break
@@ -90,10 +77,6 @@ while true; do
         ;;
     --flag-compress-release)
         IS_SUPPORT_COMPRESS_RELEASE="true"
-        shift 1
-        ;;
-    --flag-upload-to-github)
-        IS_SUPPORT_UPLOAD_TO_GITHUB="true"
         shift 1
         ;;
     *)
