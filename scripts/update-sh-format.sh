@@ -53,9 +53,11 @@ check_cygwin_setup_exist() {
 
             rm -rf "/${DOWNLOAD_FILE_NAME:?}"
 
-            # 对于 git-bash，缺省的 curl 为 C:\Program Files\Git\mingw64\bin\curl.exe, 支持 bash 路径的
-            # 对于 cygwin，缺省的 curl 为 C:\Windows\System32\curl.exe, 不支持 bash 路径的
-            # 此处为了统一处理，我们一律采用 C:\Windows\System32\curl.exe 进行相关的处理
+            # In git-bash, the default curl is C:\Program Files\Git\mingw64\bin\curl.exe,
+            # which understands bash-style paths.
+            # In cygwin, the default curl is C:\Windows\System32\curl.exe, which does
+            # NOT understand bash-style paths.
+            # To keep things consistent, we always use C:\Windows\System32\curl.exe here.
             SYSTEM_ROOT_PATH=$(powershell.exe -Command "echo \$env:SystemRoot" | tr -d '\r')
             COMMAND="\"$(transfer_path_to_unix "$SYSTEM_ROOT_PATH/System32/curl.exe")\" -L -o \"$(transfer_path_to_windows "/$DOWNLOAD_FILE_NAME")\" \"$DOWNLOAD_URL\""
             echo exec: "$COMMAND"
