@@ -8,7 +8,7 @@ import (
 	"runtime"
 	"strings"
 
-	packageVersion "properties-cli/internal/version"
+	packageVersion "github.com/jason-xie-123/properties-tools/properties-cli/internal/version"
 
 	"github.com/urfave/cli/v2"
 )

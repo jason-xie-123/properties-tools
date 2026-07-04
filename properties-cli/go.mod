@@ -1,4 +1,4 @@
-module properties-cli
+module github.com/jason-xie-123/properties-tools/properties-cli
 
 go 1.22
 
